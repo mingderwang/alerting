@@ -60,3 +60,4 @@ Adds API support for create, update, and deleting destinations.
 ### Commits
 
 * [[`4771e6c`](https://github.com/mauve-hedgehog/opendistro-elasticsearch-alerting/commit/4771e6c5ce6f541fc84f1290ac2fd43f64f3dcb2)] Initial release for OpenDistro Elasticsearch Alerting
+
