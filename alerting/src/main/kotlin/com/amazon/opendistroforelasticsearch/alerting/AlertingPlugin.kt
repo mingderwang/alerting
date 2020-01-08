@@ -36,6 +36,7 @@ import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestIndexMonit
 import com.amazon.opendistroforelasticsearch.alerting.resthandler.RestSearchMonitorAction
 import com.amazon.opendistroforelasticsearch.alerting.script.TriggerScript
 import com.amazon.opendistroforelasticsearch.alerting.settings.AlertingSettings
+import com.amazon.opendistroforelasticsearch.alerting.Destination.NotificationSettings
 import org.elasticsearch.action.ActionRequest
 import org.elasticsearch.action.ActionResponse
 import org.elasticsearch.client.Client
@@ -165,7 +166,13 @@ internal class AlertingPlugin : PainlessExtension, ActionPlugin, ScriptPlugin, P
                 AlertingSettings.ALERT_HISTORY_MAX_DOCS,
                 AlertingSettings.ALERTING_MAX_MONITORS,
                 AlertingSettings.REQUEST_TIMEOUT,
-                AlertingSettings.MAX_ACTION_THROTTLE_VALUE)
+                AlertingSettings.MAX_ACTION_THROTTLE_VALUE,
+                NotificationSettings.MAIL_HOST,
+                NotificationSettings.MAIL_PORT,
+                NotificationSettings.MAIL_METHOD,
+                NotificationSettings.MAIL_FROM,
+                NotificationSettings.MAIL_USERNAME,
+                NotificationSettings.MAIL_PASSWORD)
     }
 
     override fun onIndexModule(indexModule: IndexModule) {

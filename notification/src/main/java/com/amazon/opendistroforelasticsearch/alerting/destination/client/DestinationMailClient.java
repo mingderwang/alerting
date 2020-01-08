@@ -17,9 +17,12 @@ package com.amazon.opendistroforelasticsearch.alerting.destination.client;
 
 import com.amazon.opendistroforelasticsearch.alerting.destination.message.BaseMessage;
 import com.amazon.opendistroforelasticsearch.alerting.destination.message.MailMessage;
+import com.amazon.opendistroforelasticsearch.alerting.Destination.NotificationSettings;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.elasticsearch.common.Strings;
+import org.elasticsearch.common.settings.Settings;
+import org.elasticsearch.env.Environment;
 import java.util.Properties;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
@@ -34,48 +37,48 @@ public class DestinationMailClient {
 
     private static final Logger logger = LogManager.getLogger(DestinationMailClient.class);
     
+    private Session session = null;
+    private String from = null;
+
+    private DestinationMailClient() {
+        settings = Environment.settings();
+
+        Properties prop = new Properties();
+        prop.put("mail.transport.protocol", "smtp");
+        prop.put("mail.smtp.host", MAIL_HOST.get(settings));
+        prop.put("mail.smtp.port", MAIL_PORT.get(settings));
+        switch(MAIL_METHOD.get(settings)) {
+        case "ssl":
+            prop.put("mail.smtp.ssl.enable", true);
+            break;
+        case "starttls":
+            prop.put("mail.smtp.starttls.enable", true);
+            break;
+        }
+        this.from = MAIL_FROM.get(settings)
+        String username = MAIL_USERNAME.get(settings);
+        if ( username != null ) {
+            prop.put("mail.smtp.auth", true);
+            this.session = Session.getInstance(prop, new javax.mail.Authenticator() {
+	    	    protected PasswordAuthentication getPasswordAuthentication() {
+		    	    return new PasswordAuthentication(username, MAIL_PASSWORD.get(settings));
+		        }
+	        });
+        } else {
+            this.session = Session.getInstance(prop);
+        }
+    }
+
     public String execute(BaseMessage message) throws Exception {
         if (message instanceof MailMessage) {
             MailMessage mailMessage = (MailMessage) message;
-            Session session = null;
-
-            Properties prop = new Properties();
-            prop.put("mail.transport.protocol", "smtp");
-            prop.put("mail.smtp.host", mailMessage.getHost());
-            prop.put("mail.smtp.port", mailMessage.getPort());
-
-            prop.put("mail.smtp.auth", mailMessage.getAuthEnable());
-            if ( mailMessage.getAuthEnable() ) {
-                session = Session.getInstance(prop, new javax.mail.Authenticator() {
-	    	        protected PasswordAuthentication getPasswordAuthentication() {
-		    	        return new PasswordAuthentication(mailMessage.getUsername(), mailMessage.getPassword());
-		            }
-	            });
-            } else {
-                session = Session.getInstance(prop);
-            }
-
-            switch(mailMessage.getMethod()) {
-            case "ssl":
-                prop.put("mail.smtp.ssl.enable", true);
-                break;
-            case "starttls":
-                prop.put("mail.smtp.starttls.enable", true);
-                break;
-            }
-
+    
             try {
                 Message mailmsg = new MimeMessage(session);
-                mailmsg.setFrom(new InternetAddress(mailMessage.getFrom()));
+                mailmsg.setFrom(new InternetAddress(from));
                 mailmsg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(mailMessage.getRecipients()));
                 mailmsg.setSubject(mailMessage.getSubject());
-
-                MimeBodyPart mimeBodyPart = new MimeBodyPart();
-                mimeBodyPart.setContent(message.getMessageContent(), "text/html");
-                Multipart multipart = new MimeMultipart();
-                multipart.addBodyPart(mimeBodyPart);
-
-                mailmsg.setContent(multipart);
+                mailmsg.setText(mailMessage.getMessageContent())
                 SendMessage(mailmsg);
             } catch (MessagingException e) {
                 return e.getMessage();
